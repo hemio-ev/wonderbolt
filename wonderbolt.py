@@ -286,10 +286,10 @@ try:
             del msg[k]
 
     for key, value in config['header_replace'].items():
-        msg[key] = value
+        msg[key] = str(value)
 
     for key, value in config['header_add'].items():
-        msg[key] = value
+        msg[key] = str(value)
 
     # send email
 
