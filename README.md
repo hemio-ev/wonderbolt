@@ -106,7 +106,7 @@ SMTP server via which the email is submitted. Default is "localhost:25".
 Example Configuration
 ---------------------
 
-```yaml
+```json
 {
     "msg_bounced_requirements": "Bounced due to unprivileged SASL user",
     "header_add": {
