@@ -221,6 +221,10 @@ try:
     if config['require_sasl_username'] != False:
         LOG.debug("[require_sasl_username] Activated")
 
+        if ARGS.sasl_username == '':
+            infomsg("[require_sasl_username] Rejected: Empty username (probably not authenticated)")
+            raise AuthenticationError(config['msg_bounced_requirements'])
+
         if not valid_address(ARGS.sasl_username):
             err("Passed `--sasl-username {}` is not a valid username"
                 .format(ARGS.sasl_username))

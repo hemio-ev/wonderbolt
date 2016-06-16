@@ -1,10 +1,10 @@
-Wonderbold
+Wonderbolt
 ==========
 
-Wonderbold is a config based email modifier, acting as local delivery agent and
+Wonderbolt is a config based email modifier, acting as local delivery agent and
 resubmitting emails via SMTP after modification.
 
-Wonderbold's main purpose is to enable simple mailinglists with external
+Wonderbolt's main purpose is to enable simple mailinglists with external
 management of subscribers.
 
 -   Depends: python >= 3.4
