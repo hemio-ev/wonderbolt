@@ -139,7 +139,7 @@ wonderbolt   unix  -       n       n       -       -       pipe
   user=ldaml
   argv=/usr/local/bin/wonderbolt.py
    --config /etc/wonderbolt/${recipient}.json
-   --sasl-username $(sasl_username)
+   --sasl-username ${sasl_username}
 ```
 
 *main.cfg*
