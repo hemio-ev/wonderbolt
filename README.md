@@ -81,7 +81,7 @@ condition.
 Enables to reject mails if the SASL username does not fulfill a
 condition. Same parameters as for `require_from`.
 
-For this feature to work, `--sasl-username $(sasl_username)` has to be
+For this feature to work, `--sasl-username ${sasl_username}` has to be
 passed.
 
 ### `sasl_recipient_delimiter`
