@@ -157,12 +157,13 @@ wonderbolt   unix  -       n       n       -       -       pipe
         "user2_lists@example.com"
     ],
     "header_replace": {
-        "List-ID": "<test.example.org>",
         "List-Help": "<mailto:listadmin@example.org>",
+        "List-Id": "<test.example.org>",
+        "List-Owner": "<mailto:listadmin@example.org>",
         "List-Post": "<mailto:list@example.org>",
-        "List-Unsubscribe": "<mailto:listadmin@example.org?body=unsubscribe%20list%20list@example.org>",
         "List-Subscribe:": "<mailto:listadmin@example.org?body=subscribe%20list%20list@example.org>",
-        "Precedence": "list"
+        "List-Unsubscribe": "<mailto:listadmin@example.org?body=unsubscribe%20list%20list@example.org>",
+        "Precedence": "bulk"
     },
     "require_sasl_username": "envelope_rcpt_to",
     "sasl_recipient_delimiter": "_"

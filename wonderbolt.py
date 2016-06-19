@@ -251,7 +251,8 @@ try:
     # parse email
 
     LOG.debug("Parsing email")
-    msg = email.message_from_file(sys.stdin)
+    STDIO = io.TextIOWrapper(sys.stdin.detach(), encoding='us-ascii', errors='surrogateescape')
+    msg = email.message_from_file(STDIO)
 
     # check From Header
 
