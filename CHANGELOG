@@ -1,3 +1,5 @@
+v1.0.0-beta.3
+ - Enforces reading message from STDIN as 7-bit ASCII
 v1.0.0-beta.2
  - Fixes handling of supplied but empty SASL username
    Assuming this means that SMTP is not authenticated (no syslog error but bounce)
