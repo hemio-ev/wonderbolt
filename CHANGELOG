@@ -1,3 +1,5 @@
+v1.0.0-beta.4
+ - Simplifies STDIN handling by using binary directly (thx to mikapfl)
 v1.0.0-beta.3
  - Enforces reading message from STDIN as 7-bit ASCII
 v1.0.0-beta.2
