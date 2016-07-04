@@ -43,6 +43,7 @@ import io
 import sys
 
 POSTFIX_PIPE_ERR = sys.stderr
+POSTFIX_PIPE_OUT = sys.stdout
 sys.stdout = io.StringIO()
 sys.stderr = io.StringIO()
 
@@ -56,6 +57,10 @@ try:
 
     class AuthenticationError(Exception):
         pass
+
+    def _reset_stdout():
+        sys.stdout = POSTFIX_PIPE_OUT
+        sys.stderr = POSTFIX_PIPE_ERR
 
     def err(msg):
         global LOG
@@ -189,118 +194,124 @@ try:
 
         return config
 
-    argparser = argparse.ArgumentParser(prog=PROG_NAME, description=PROG_NAME)
-    argparser.add_argument('--config', nargs='+', required=True)
-    argparser.add_argument('--sasl-username', default=None)
+    def main(LOG, PROG_NAME):
+        argparser = argparse.ArgumentParser(prog=PROG_NAME, description=PROG_NAME)
+        argparser.add_argument('--config', nargs='+', required=True)
+        argparser.add_argument('--sasl-username', default=None)
 
-    ARGS = argparser.parse_args()
+        ARGS = argparser.parse_args()
 
-    config = collections.OrderedDict([
-        ('envelope_mail_from', None),
-        ('envelope_rcpt_to', None),
-        ('header_add', {}),
-        ('header_replace', {}),
-        ('require_from', False),
-        ('require_sasl_username', False),
-        ('sasl_recipient_delimiter', ""),
-        ('smtp_server', 'localhost:25'),
-        ('msg_bounced_requirements',
-         "You are not fulfilling all requirements for writing to this address.")
-    ])
+        config = collections.OrderedDict([
+            ('envelope_mail_from', None),
+            ('envelope_rcpt_to', None),
+            ('header_add', {}),
+            ('header_replace', {}),
+            ('require_from', False),
+            ('require_sasl_username', False),
+            ('sasl_recipient_delimiter', ""),
+            ('smtp_server', 'localhost:25'),
+            ('msg_bounced_requirements',
+             "You are not fulfilling all requirements for writing to this address.")
+        ])
 
-    # load configs
+        # load configs
 
-    LOG.debug("Loading config files %s", ARGS.config)
-    for filename in ARGS.config:
-        config = load_config(filename, config)
+        LOG.debug("Loading config files %s", ARGS.config)
+        for filename in ARGS.config:
+            config = load_config(filename, config)
 
-    LOG.debug("Using the following config:\n%s", config)
+        LOG.debug("Using the following config:\n%s", config)
 
-    # check SASL username
+        # check SASL username
 
-    if config['require_sasl_username'] != False:
-        LOG.debug("[require_sasl_username] Activated")
+        if config['require_sasl_username'] != False:
+            LOG.debug("[require_sasl_username] Activated")
 
-        if ARGS.sasl_username == '':
-            infomsg("[require_sasl_username] Rejected: Empty username (probably not authenticated)")
-            raise AuthenticationError(config['msg_bounced_requirements'])
+            if ARGS.sasl_username == '':
+                infomsg("[require_sasl_username] Rejected: Empty username (probably not authenticated)")
+                raise AuthenticationError(config['msg_bounced_requirements'])
 
-        if not valid_address(ARGS.sasl_username):
-            err("Passed `--sasl-username {}` is not a valid username"
-                .format(ARGS.sasl_username))
+            if not valid_address(ARGS.sasl_username):
+                err("Passed `--sasl-username {}` is not a valid username"
+                    .format(ARGS.sasl_username))
 
-        if config['require_sasl_username'] == 'envelope_rcpt_to':
-            if config['envelope_rcpt_to'] is None:
-                config_err(
-                    ARGS.config[-1],
-                    "'envelope_rcpt_to' must be set if 'require_sasl_username' is used")
-            allowed_usernames = config['envelope_rcpt_to']
+            if config['require_sasl_username'] == 'envelope_rcpt_to':
+                if config['envelope_rcpt_to'] is None:
+                    config_err(
+                        ARGS.config[-1],
+                        "'envelope_rcpt_to' must be set if 'require_sasl_username' is used")
+                allowed_usernames = config['envelope_rcpt_to']
+            else:
+                allowed_usernames = config['require_sasl_username']
+
+            filterf = lambda x: get_address_without_delimiter(x, config['sasl_recipient_delimiter'])
+
+            if get_address(ARGS.sasl_username) not in map(filterf, allowed_usernames):
+                infomsg("[require_sasl_username] Rejected: Username is not in authorized list")
+                raise AuthenticationError(config['msg_bounced_requirements'])
+            
+            LOG.debug("[require_sasl_username] Passed")
         else:
-            allowed_usernames = config['require_sasl_username']
+            LOG.debug("[require_sasl_username] Not activated")
 
-        filterf = lambda x: get_address_without_delimiter(x, config['sasl_recipient_delimiter'])
+        # parse email
 
-        if get_address(ARGS.sasl_username) not in map(filterf, allowed_usernames):
-            infomsg("[require_sasl_username] Rejected: Username is not in authorized list")
-            raise AuthenticationError(config['msg_bounced_requirements'])
-        
-        LOG.debug("[require_sasl_username] Passed")
-    else:
-        LOG.debug("[require_sasl_username] Not activated")
+        LOG.debug("Parsing email")
+        msg = email.message_from_binary_file(sys.stdin.detach())
 
-    # parse email
+        # check From Header
 
-    LOG.debug("Parsing email")
-    msg = email.message_from_binary_file(sys.stdin.detach())
+        if config['require_from'] != False:
+            LOG.debug("[require_from] Activated")
 
-    # check From Header
+            if not valid_address(msg['From']):
+                infomsg("[require_from] Rejected: 'From' is not a valid address")
+                raise AuthenticationError(config['msg_bounced_requirements'])
 
-    if config['require_from'] != False:
-        LOG.debug("[require_from] Activated")
+            if config['require_from'] == 'envelope_rcpt_to':
+                if config['envelope_rcpt_to'] is None:
+                    config_err(
+                        ARGS.config[-1],
+                        "'envelope_rcpt_to' must be set if 'require_from' is used")
+                allowed_froms = config['envelope_rcpt_to']
+            else:
+                allowed_froms = config['require_from']
 
-        if not valid_address(msg['From']):
-            infomsg("[require_from] Rejected: 'From' is not a valid address")
-            raise AuthenticationError(config['msg_bounced_requirements'])
+            if get_address(msg['From']) not in map(get_address, allowed_froms):
+                infomsg("[require_from] Rejected: 'From' is not in authorized list")
+                raise AuthenticationError(config['msg_bounced_requirements'])
 
-        if config['require_from'] == 'envelope_rcpt_to':
-            if config['envelope_rcpt_to'] is None:
-                config_err(
-                    ARGS.config[-1],
-                    "'envelope_rcpt_to' must be set if 'require_from' is used")
-            allowed_froms = config['envelope_rcpt_to']
+            LOG.debug("[require_from] Passed")
         else:
-            allowed_froms = config['require_from']
+            LOG.debug("[require_from] Not activated")
 
-        if get_address(msg['From']) not in map(get_address, allowed_froms):
-            infomsg("[require_from] Rejected: 'From' is not in authorized list")
-            raise AuthenticationError(config['msg_bounced_requirements'])
+        # update headers
 
-        LOG.debug("[require_from] Passed")
+        for k in config['header_replace']:
+            if k in msg:
+                del msg[k]
+
+        for key, value in config['header_replace'].items():
+            msg[key] = str(value)
+
+        for key, value in config['header_add'].items():
+            msg[key] = str(value)
+
+        # send email
+
+        LOG.debug("Connecting to SMTP server at {}".format(config['smtp_server']))
+        smtp_conn = smtplib.SMTP(config['smtp_server'])
+
+        LOG.debug("Sending email via SMTP")
+        smtp_conn.send_message(
+            msg,
+            config['envelope_mail_from'],
+            config['envelope_rcpt_to'])
+
+    if __name__ == "__main__":
+        main(LOG, PROG_NAME)
     else:
-        LOG.debug("[require_from] Not activated")
-
-    # update headers
-
-    for k in config['header_replace']:
-        if k in msg:
-            del msg[k]
-
-    for key, value in config['header_replace'].items():
-        msg[key] = str(value)
-
-    for key, value in config['header_add'].items():
-        msg[key] = str(value)
-
-    # send email
-
-    LOG.debug("Connecting to SMTP server at {}".format(config['smtp_server']))
-    smtp_conn = smtplib.SMTP(config['smtp_server'])
-
-    LOG.debug("Sending email via SMTP")
-    smtp_conn.send_message(
-        msg,
-        config['envelope_mail_from'],
-        config['envelope_rcpt_to'])
+        _reset_stdout()
 
 except AuthenticationError as e:
     LOG.debug("Rejecting message with 5.3.0")
