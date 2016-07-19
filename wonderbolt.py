@@ -58,23 +58,23 @@ try:
     class AuthenticationError(Exception):
         pass
 
-    def _reset_stdout():
+    def _reset_stdout() -> None:
         sys.stdout = POSTFIX_PIPE_OUT
         sys.stderr = POSTFIX_PIPE_ERR
 
-    def err(msg):
+    def err(msg: str) -> None:
         global LOG
         LOG.error('Error on executing %s:\n%s', sys.argv, msg)
         raise Exception()
 
-    def infomsg(msg):
+    def infomsg(msg: str) -> None:
         global LOG
         LOG.info('On executing %s:\n%s', sys.argv, msg)
 
-    def config_err(filename, msg):
+    def config_err(filename: str, msg: str) -> None:
         err("violation in config file '{}': {}".format(filename, msg))
 
-    def valid_address(to):
+    def valid_address(to) -> bool:
         if not isinstance(to, str):
             return False
         addresses = email.utils.getaddresses([to])
@@ -83,10 +83,10 @@ try:
         else:
             return False
 
-    def get_address(to):
+    def get_address(to: str) -> str:
         return email.utils.parseaddr(to)[1]
 
-    def get_address_without_delimiter(to, delim):
+    def get_address_without_delimiter(to: str, delim: str) -> str:
         addr = get_address(to)
         split = addr.rsplit('@', 1)
         localpart = split[0]
@@ -105,7 +105,7 @@ try:
         else:
             return "{}@{}".format(new_localpart, split[1])
 
-    def load_config(filename, defaults):
+    def load_config(filename: str, defaults: collections.OrderedDict) -> collections.OrderedDict:
 
         config = defaults.copy()
 
@@ -190,11 +190,11 @@ try:
                     "'require_sasl_username' lists must only contain valid addresses")
 
         if not isinstance(config['sasl_recipient_delimiter'], str):
-            config_err("'sasl_recipient_delimiter' must be a string or `false`")
+            config_err(filename, "'sasl_recipient_delimiter' must be a string or `false`")
 
         return config
 
-    def main(LOG, PROG_NAME):
+    def main(LOG: logging.Logger, PROG_NAME: str) -> None:
         argparser = argparse.ArgumentParser(prog=PROG_NAME, description=PROG_NAME)
         argparser.add_argument('--config', nargs='+', required=True)
         argparser.add_argument('--sasl-username', default=None)
