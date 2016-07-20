@@ -4,14 +4,14 @@ Wonderbolt
 Wonderbolt is a config based email modifier, acting as local delivery agent and
 resubmitting emails via SMTP after modification.
 
-Wonderbolt's main purpose is to enable simple mailinglists with external
+Wonderbolt's main purpose is to enable simple email lists with external
 management of subscribers.
 
 -   Depends: python >= 3.4
 -   Recommends: python3-systemd
 
-Commandline Options
--------------------
+Command-Line Options
+--------------------
 
 ### `--config`
 
@@ -20,7 +20,7 @@ values from earlier ones.
 
 ### `--sasl-username`
 
-Optional. See config optione `require_sasl_username`.
+Optional. See config option `require_sasl_username`.
 
 Configuration Options
 ---------------------
@@ -176,7 +176,7 @@ wonderbolt   unix  -       n       n       -       -       pipe
 
 *maps/trasport* (postfix `transport_maps`)
 
-    kist@example.org wonderbolt:
+    list@example.org wonderbolt:
 
 
 Dedication
