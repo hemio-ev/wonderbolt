@@ -21,7 +21,7 @@ PROG_NAME = 'wonderbolt'
 
 # LOG_LEVEL
 # Possible values: ERROR, WARNING, INFO, DEBUG
-LOG_LEVEL = 'DEBUG'
+LOG_LEVEL = 'INFO'
 
 try:
     from systemd.journal import JournalHandler
