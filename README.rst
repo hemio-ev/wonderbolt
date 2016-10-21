@@ -56,7 +56,7 @@ values.
 ``envelope_mail_from``
 ~~~~~~~~~~~~~~~~~~~~~~
 
-*string* or *``null``*
+*string* or ``null``
 
 Bounce address for the new delivery of the email. If this setting is
 ``null``, it will be derived from the ``From`` email header.
@@ -64,7 +64,7 @@ Bounce address for the new delivery of the email. If this setting is
 ``envelope_rcpt_to``
 ~~~~~~~~~~~~~~~~~~~~
 
-*list of strings* or *``null``*
+*list of strings* or ``null``
 
 Recipients for new delivery of the email. If this setting is ``null``,
 it will be derived from the ``To`` email header.
@@ -72,21 +72,21 @@ it will be derived from the ``To`` email header.
 ``require_from``
 ~~~~~~~~~~~~~~~~
 
-*list of strings* or *``"envelope_rcpt_to"``* or *``false``*
+*list of strings* or ``"envelope_rcpt_to"`` or ``false``
 
 Enables to reject mails if the ``From:`` email header does not fulfill a
 condition.
 
 -  *list of strings*: ``From`` must be contained in this list.
--  *``"envelope_rcpt_to"``*: ``From`` must be contained in the
+-  ``"envelope_rcpt_to"``: ``From`` must be contained in the
    ``envelope_rcpt_to`` list. If this option is set,
    ``envelope_rcpt_to`` must be set and not ``null``.
--  *``false``*: Disables checks (default).
+-  ``false``: Disables checks (default).
 
 ``require_sasl_username``
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*list of strings* or *``"envelope_rcpt_to"``* or *``false``*
+*list of strings* or ``"envelope_rcpt_to"`` or ``false``
 
 Enables to reject mails if the SASL username does not fulfill a
 condition. Same parameters as for ``require_from``.
