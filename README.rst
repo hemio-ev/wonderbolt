@@ -41,9 +41,20 @@ configurations are violated.
 *mapping*
 
 Adds header values without removing/changing existing header lines.
-Performed after ``header_replace``. Therefore, ``header_add`` adds a
-header a second time if key overlaps with ``header_replace`` are
+Performed after ``header_replace`` and ``header_add_if_missing``.
+Therefore, ``header_add`` adds a header a second time if key overlaps
+with ``header_replace`` and/or ``header_add_if_missing`` are
 present.
+
+``header_add_if_missing``
+~~~~~~~~~~~~~~
+
+*mapping*
+
+Adds header values only if header with the given key does not exist.
+Performed after ``header_replace``, but before ``header_add``.
+Therefore, ``header_add`` adds a header a second time if key overlaps
+with ``header_add_if_missing`` are present.
 
 ``header_replace``
 ~~~~~~~~~~~~~~~~~~
