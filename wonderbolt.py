@@ -118,6 +118,7 @@ try:
             'envelope_mail_from',
             'envelope_rcpt_to',
             'header_add',
+            'header_add_if_missing',
             'header_replace',
             'require_from',
             'require_sasl_username',
@@ -154,6 +155,11 @@ try:
         if not isinstance(config['header_add'], dict):
             config_err(filename, "'header_add' must be a dict")
 
+        # validate 'header_add_if_missing'
+
+        if not isinstance(config['header_add_if_missing'], dict):
+            config_err(filename, "'header_add_if_missing' must be a dict")
+            
         # validate 'header_replace'
 
         if not isinstance(config['header_replace'], dict):
@@ -205,6 +211,7 @@ try:
             ('envelope_mail_from', None),
             ('envelope_rcpt_to', None),
             ('header_add', {}),
+            ('header_add_if_missing', {}),
             ('header_replace', {}),
             ('require_from', False),
             ('require_sasl_username', False),
@@ -293,6 +300,11 @@ try:
 
         for key, value in config['header_replace'].items():
             msg[key] = str(value)
+
+        for key, value in config['header_add_if_missing'].items():
+            if key in msg:
+                continue
+            msg[key] = value
 
         for key, value in config['header_add'].items():
             msg[key] = str(value)
