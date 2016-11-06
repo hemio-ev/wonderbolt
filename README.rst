@@ -146,7 +146,7 @@ Complete Mailinglist under Postfix
 
 *master.cfg*
 
-``wonderbolt   unix  -       n       n       -       -       pipe   flags=Ohu   user=ldaml   argv=/usr/local/bin/wonderbolt.py    --config /etc/wonderbolt/${recipient}.json    --sasl-username ${sasl_username}``
+``wonderbolt   unix  -       n       n       -       -       pipe   flags=Ohu   user=ldaml   argv=/usr/local/bin/wonderbolt.py    --config /etc/wonderbolt/${nexthop}.json    --sasl-username ${sasl_username}``
 
 *main.cfg*
 
@@ -184,11 +184,11 @@ Complete Mailinglist under Postfix
 
     list_bounce@example.org listadmin@example.org
 
-*maps/trasport* (postfix ``transport_maps``)
+*maps/transport* (postfix ``transport_maps``)
 
 ::
 
-    list@example.org wonderbolt:
+    list@example.org wonderbolt:list@example.org
 
 Dedication
 ----------
