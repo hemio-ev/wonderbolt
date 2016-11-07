@@ -199,8 +199,7 @@ Complete Mailing List under Postfix
     2369 <https://www.ietf.org/rfc/rfc2369.txt>`__ by replacing the
     ``List-Help``, ``List-Owner``, ``List-Subscribe`` and
     ``List-Unsubscribe`` headers. The ``List-Post`` header could also be
-    replaced. However, we found that in many application this is not the
-    expected behavior.
+    replaced.
 
 *maps/aliases* (postfix ``virtual_alias_maps``)
 
