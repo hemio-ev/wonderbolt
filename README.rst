@@ -16,8 +16,8 @@ Command-Line Options
 ``--config``
 ~~~~~~~~~~~~
 
-Required. Can be given multiple times. Later config files overwrite
-values from earlier ones.
+Required. This option takes one or more paths to config files. Later
+config files overwrite values from earlier ones.
 
 ``--sasl-username``
 ~~~~~~~~~~~~~~~~~~~
@@ -101,7 +101,7 @@ passed.
 
 Recipient delimiters only affect the interpretation of
 ``envelope_rcpt_to`` if ``require_sasl_username`` is set to this value.
-The localpart of all recipients is stripped from all characters occuring
+The localpart of all recipients is stripped from all characters occurring
 after a first delimiter for comparing with the sasl username.
 
 This option should be set to the same value as the
@@ -116,8 +116,10 @@ corresponds to no delimiters.
 
 SMTP server via which the email is submitted. Default is "localhost:25".
 
-Example Configuration
----------------------
+Configuration Examples
+----------------------
+
+Example of a wonderbolt config without a specific use case.
 
 .. code:: json
 
@@ -141,8 +143,8 @@ Example Configuration
         "smtp_server": "mail.example.com:25"
     }
 
-Complete Mailinglist under Postfix
-----------------------------------
+Complete Mailing List under Postfix
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *master.cfg*
 
@@ -159,36 +161,70 @@ Complete Mailinglist under Postfix
 .. code:: json
 
     {
-        "envelope_mail_from": "list_bounce@example.org",
+        "envelope_mail_from": "list+bounce@example.org",
         "envelope_rcpt_to": [
             "listadmin@example.org",
             "user1@example.com",
             "user2_lists@example.com"
         ],
         "header_add_if_missing": {
-            "List-Help": "<mailto:listadmin@example.org>",
             "List-Id": "<test.example.org>",
-            "List-Owner": "<mailto:listadmin@example.org>",
             "List-Post": "<mailto:list@example.org>",
-            "List-Subscribe": "<mailto:listadmin@example.org?body=subscribe%20list%20list@example.org>",
-            "List-Unsubscribe": "<mailto:listadmin@example.org?body=unsubscribe%20list%20list@example.org>",
             "Precedence": "bulk"
         },
+        "header_replace": {
+            "List-Help": "<mailto:listadmin@example.org>",
+            "List-Owner": "<mailto:listadmin@example.org>",
+            "List-Subscribe": "<mailto:listadmin@example.org?body=subscribe%20list%20list@example.org>",
+            "List-Unsubscribe": "<mailto:listadmin@example.org?body=unsubscribe%20list%20list@example.org>"
+        },
         "require_sasl_username": "envelope_rcpt_to",
-        "sasl_recipient_delimiter": "+"
+        "sasl_recipient_delimiter": "_"
     }
+
+.. note::
+
+    The choice of which headers are kept and which are replaced is made
+    such that the list should conform with all currently applicable
+    RFCs.
+
+    This configuration follows `RFC
+    2919 <https://www.ietf.org/rfc/rfc2919.txt>`__ by not removing the
+    ``List-Id`` of a *"parent" mailing list* by not removing any
+    ``List-Id``. Since it is hard to tell what an *unexpected source*
+    for such a header is, it does pass a given ``List-Id`` through to
+    the list in any case, which violates a *SHOULD NOT* of this RFC.
+
+    It further follows `RFC
+    2369 <https://www.ietf.org/rfc/rfc2369.txt>`__ by replacing the
+    ``List-Help``, ``List-Owner``, ``List-Subscribe`` and
+    ``List-Unsubscribe`` headers. The ``List-Post`` header could also be
+    replaced. However, we found that in many application this is not the
+    expected behavior.
 
 *maps/aliases* (postfix ``virtual_alias_maps``)
 
 ::
 
-    list_bounce@example.org listadmin@example.org
+    list+bounce@example.org listadmin@example.org
+
+.. note::
+
+    This aliasing of the list-admin address is done to use it as an
+    envelope sender, which does not conflict with any sender policies
+    defined by via the SPF and similar mechanisms.
 
 *maps/transport* (postfix ``transport_maps``)
 
 ::
 
     list@example.org wonderbolt:list@example.org
+
+See also
+--------
+
+`pipe(8) <http://www.postfix.org/pipe.8.html>`__, Postfix delivery to
+external command
 
 Dedication
 ----------
