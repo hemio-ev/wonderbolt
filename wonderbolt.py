@@ -304,7 +304,7 @@ try:
         for key, value in config['header_add_if_missing'].items():
             if key in msg:
                 continue
-            msg[key] = value
+            msg[key] = str(value)
 
         for key, value in config['header_add'].items():
             msg[key] = str(value)
