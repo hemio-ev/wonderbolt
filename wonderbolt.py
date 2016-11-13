@@ -256,7 +256,7 @@ try:
             if get_address(ARGS.sasl_username) not in map(filterf, allowed_usernames):
                 infomsg("[require_sasl_username] Rejected: Username is not in authorized list")
                 raise AuthenticationError(config['msg_bounced_requirements'])
-            
+
             LOG.debug("[require_sasl_username] Passed")
         else:
             LOG.debug("[require_sasl_username] Not activated")

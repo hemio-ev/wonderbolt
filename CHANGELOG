@@ -1,3 +1,12 @@
+v1.0.0-beta.5
+ - Adds basic type signatures to code
+ - Adds sphinx docs to build manpage
+ - Adds support for header_add_if_missing
+ - Adds support for loading as module
+ - Changes LOG_LEVEL default to 'INFO'
+ - Changes example config in README to match relevant RFCs
+ - Fixes error handling when sasl_recipient_delimiter is not a str
+ - Fixes several typos in README
 v1.0.0-beta.4
  - Simplifies STDIN handling by using binary directly (thx to mikapfl)
 v1.0.0-beta.3
