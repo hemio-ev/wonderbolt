@@ -1,3 +1,5 @@
+v1.1.0 (WIP)
+ - Fixes pylint3 nonconformities as far as possible
 v1.0.0 "Rainbow Crash" (2016-11-29)
  - Adds codename
 v1.0.0-beta.5

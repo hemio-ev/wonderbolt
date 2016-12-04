@@ -93,7 +93,7 @@ try:
         if len(delim) == 0:
             delim_pos = None
         else:
-            positive = [ i for i in map(lambda d: localpart.find(d), delim) if i > 0 ]
+            positive = [i for i in [localpart.find(d) for d in delim] if i > 0]
             if positive:
                 delim_pos = min(positive)
             else:
@@ -159,7 +159,7 @@ try:
 
         if not isinstance(config['header_add_if_missing'], dict):
             config_err(filename, "'header_add_if_missing' must be a dict")
-            
+
         # validate 'header_replace'
 
         if not isinstance(config['header_replace'], dict):
@@ -168,7 +168,7 @@ try:
         # validate 'require_from'
 
         if (config['require_from'] != False and
-            config['require_from'] != 'envelope_rcpt_to'):
+                config['require_from'] != 'envelope_rcpt_to'):
 
             if not isinstance(config['require_from'], list):
                 config_err(
@@ -183,7 +183,7 @@ try:
         # validate 'require_sasl_username'
 
         if (config['require_sasl_username'] != False and
-            config['require_sasl_username'] != 'envelope_rcpt_to'):
+                config['require_sasl_username'] != 'envelope_rcpt_to'):
 
             if not isinstance(config['require_sasl_username'], list):
                 config_err(
@@ -325,10 +325,10 @@ try:
     else:
         _reset_stdout()
 
-except AuthenticationError as e:
+except AuthenticationError as auth_err:
     LOG.debug("Rejecting message with 5.3.0")
     print(
-        "5.3.0 {.args[0]}".format(e),
+        "5.3.0 {.args[0]}".format(auth_err),
         file=POSTFIX_PIPE_ERR)
 
     sys.exit(1)
