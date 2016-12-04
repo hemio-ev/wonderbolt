@@ -47,6 +47,20 @@ POSTFIX_PIPE_OUT = sys.stdout
 sys.stdout = io.StringIO()
 sys.stderr = io.StringIO()
 
+BOUNCE_TEMPLATE = """This is the mail system at host mail.hemio.de.
+
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
+
+For further assistance, please send mail to postmaster.
+
+If you do so, please include this problem report. You can
+delete the text from the attached returned message.
+
+                   The mail system
+
+{msg}"""
+
 try:
     import argparse
     import collections
@@ -54,6 +68,10 @@ try:
     import email.utils
     import json
     import smtplib
+    import textwrap
+    from email.mime.message import MIMEMessage
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
 
     class AuthenticationError(Exception):
         pass
@@ -315,10 +333,54 @@ try:
         smtp_conn = smtplib.SMTP(config['smtp_server'])
 
         LOG.debug("Sending email via SMTP")
-        smtp_conn.send_message(
+        smtp_err = smtp_conn.send_message(
             msg,
             config['envelope_mail_from'],
             config['envelope_rcpt_to'])
+
+        # handle partially failed delivery
+
+        if smtp_err:
+            stmt_err_dict = [
+                {'address': errm[0],
+                 'code': errm[1][0],
+                 'error': errm[1][1].decode('ascii', 'surrogateescape')}
+                for errm in smtp_err.items()]
+
+            for errm in stmt_err_dict:
+                LOG.info(
+                    "SMTP server '{host}' error for RCPT {address}: {code} {error}"
+                    .format(host=config['smtp_server'], **errm))
+
+            # format SMTP error messages
+            smtp_msg_text = "\n\n".join([
+                s['address'] + "\n" +
+                textwrap.indent(prefix=" "*4, text=textwrap.fill(
+                    "{code} {error}".format(**s)
+                )) for s in stmt_err_dict
+                ])
+            # create message part that explains bounce
+            bounce_text = MIMEText(BOUNCE_TEMPLATE.format(msg=smtp_msg_text))
+            bounce_text['Content-Description'] = 'Notification'
+
+            # create message part with original mail
+            original_msg = MIMEMessage(msg)
+            original_msg['Content-Description'] = 'Undelivered Message'
+
+            # create complete bounce message
+            bounce_msg = MIMEMultipart('report; report-type=delivery-status')
+            bounce_msg.attach(bounce_text)
+            bounce_msg.attach(original_msg)
+            bounce_msg['From'] = config['envelope_mail_from']
+            bounce_msg['To'] = config['envelope_mail_from']
+            bounce_msg['Subject'] = 'Mail delivery failed: returning message'
+            bounce_msg['Date'] = email.utils.formatdate(localtime=True)
+            bounce_msg.preamble = 'This is a MIME-encapsulated message.\n'
+
+            smtp_err_2 = smtp_conn.send_message(bounce_msg)
+
+            if smtp_err_2:
+                err("Sending bounce message failed partially: {}".format(smtp_err_2))
 
     if __name__ == "__main__":
         main(LOG, PROG_NAME)
