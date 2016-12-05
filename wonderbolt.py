@@ -47,19 +47,22 @@ POSTFIX_PIPE_OUT = sys.stdout
 sys.stdout = io.StringIO()
 sys.stderr = io.StringIO()
 
-BOUNCE_TEMPLATE = """This is the mail system at host mail.hemio.de.
+BOUNCE_TEMPLATE = """This is the mail system at host {hostname}.
 
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
+I'm sorry to have to inform you that a message could not be
+delivered to one or more recipients. It's attached below.
+
+The message has probably reached all other recipients if no
+additional notifications are received.
 
 For further assistance, please send mail to postmaster.
 
 If you do so, please include this problem report. You can
 delete the text from the attached returned message.
 
-                   The mail system
+                   The mail system (Wonderbolt)
 
-{msg}"""
+{smtp_err}"""
 
 try:
     import argparse
@@ -68,6 +71,7 @@ try:
     import email.utils
     import json
     import smtplib
+    import socket
     import textwrap
     from email.mime.message import MIMEMessage
     from email.mime.multipart import MIMEMultipart
@@ -130,6 +134,12 @@ try:
         with open(filename, encoding='utf-8') as f:
             config.update(json.load(f))
 
+        check_config(filename, config)
+
+        return config
+
+    def check_config(filename: str, config: collections.OrderedDict) -> None:
+
         # check for unknown config values
 
         known_keys = [
@@ -142,14 +152,16 @@ try:
             'require_sasl_username',
             'sasl_recipient_delimiter',
             'smtp_server',
-            'msg_bounced_requirements'
+            'bounce_from',
+            'reject_msg_requirements',
+            'hostname'
         ]
 
         for k in config:
             if k not in known_keys:
                 config_err(filename, "unknown parameter '{}'".format(k))
 
-        # validate 'envelope_mail_from
+        # validate 'envelope_mail_from'
 
         if config['envelope_mail_from'] is not None:
             if not valid_address(config['envelope_mail_from']):
@@ -213,10 +225,28 @@ try:
                     filename,
                     "'require_sasl_username' lists must only contain valid addresses")
 
+        # validate 'sasl_recipient_delimiter'
+
         if not isinstance(config['sasl_recipient_delimiter'], str):
             config_err(filename, "'sasl_recipient_delimiter' must be a string or `false`")
 
-        return config
+        # validate 'envelope_mail_from'
+
+        if config['bounce_from'] is not None:
+            if not valid_address(config['bounce_from']):
+                config_err(
+                    filename,
+                    "'bounce_from' must be a valid address")
+
+        # validate 'reject_msg_requirements'
+
+        if not isinstance(config['reject_msg_requirements'], str):
+            config_err(filename, "'reject_msg_requirements' must be a string")
+
+        # validate 'hostname'
+
+        if not isinstance(config['hostname'], str):
+            config_err(filename, "'hostname' must be a string")
 
     def main(LOG: logging.Logger, PROG_NAME: str) -> None:
         argparser = argparse.ArgumentParser(prog=PROG_NAME, description=PROG_NAME)
@@ -235,8 +265,10 @@ try:
             ('require_sasl_username', False),
             ('sasl_recipient_delimiter', ""),
             ('smtp_server', 'localhost:25'),
-            ('msg_bounced_requirements',
-             "You are not fulfilling all requirements for writing to this address.")
+            ('bounce_from', None),
+            ('reject_msg_requirements',
+             "You are not fulfilling all requirements for writing to this address."),
+            ('hostname', socket.getfqdn())
         ])
 
         # load configs
@@ -244,6 +276,12 @@ try:
         LOG.debug("Loading config files %s", ARGS.config)
         for filename in ARGS.config:
             config = load_config(filename, config)
+
+        # generate default 'bounce_from' if missing
+        if config['bounce_from'] is None:
+            config['bounce_from'] = \
+                "Mail Delivery System <MAILER-DAEMON@{hostname}>".format(**config)
+            check_config('--not traceable--', config)
 
         LOG.debug("Using the following config:\n%s", config)
 
@@ -254,7 +292,7 @@ try:
 
             if ARGS.sasl_username == '':
                 infomsg("[require_sasl_username] Rejected: Empty username (probably not authenticated)")
-                raise AuthenticationError(config['msg_bounced_requirements'])
+                raise AuthenticationError(config['reject_msg_requirements'])
 
             if not valid_address(ARGS.sasl_username):
                 err("Passed `--sasl-username {}` is not a valid username"
@@ -273,7 +311,7 @@ try:
 
             if get_address(ARGS.sasl_username) not in map(filterf, allowed_usernames):
                 infomsg("[require_sasl_username] Rejected: Username is not in authorized list")
-                raise AuthenticationError(config['msg_bounced_requirements'])
+                raise AuthenticationError(config['reject_msg_requirements'])
 
             LOG.debug("[require_sasl_username] Passed")
         else:
@@ -291,7 +329,7 @@ try:
 
             if not valid_address(msg['From']):
                 infomsg("[require_from] Rejected: 'From' is not a valid address")
-                raise AuthenticationError(config['msg_bounced_requirements'])
+                raise AuthenticationError(config['reject_msg_requirements'])
 
             if config['require_from'] == 'envelope_rcpt_to':
                 if config['envelope_rcpt_to'] is None:
@@ -304,7 +342,7 @@ try:
 
             if get_address(msg['From']) not in map(get_address, allowed_froms):
                 infomsg("[require_from] Rejected: 'From' is not in authorized list")
-                raise AuthenticationError(config['msg_bounced_requirements'])
+                raise AuthenticationError(config['reject_msg_requirements'])
 
             LOG.debug("[require_from] Passed")
         else:
@@ -341,13 +379,13 @@ try:
         # handle partially failed delivery
 
         if smtp_err:
-            stmt_err_dict = [
+            smtp_err_printable = [
                 {'address': errm[0],
                  'code': errm[1][0],
                  'error': errm[1][1].decode('ascii', 'surrogateescape')}
                 for errm in smtp_err.items()]
 
-            for errm in stmt_err_dict:
+            for errm in smtp_err_printable:
                 LOG.info(
                     "SMTP server '{host}' error for RCPT {address}: {code} {error}"
                     .format(host=config['smtp_server'], **errm))
@@ -357,27 +395,28 @@ try:
                 s['address'] + "\n" +
                 textwrap.indent(prefix=" "*4, text=textwrap.fill(
                     "{code} {error}".format(**s)
-                )) for s in stmt_err_dict
+                )) for s in smtp_err_printable
                 ])
             # create message part that explains bounce
-            bounce_text = MIMEText(BOUNCE_TEMPLATE.format(msg=smtp_msg_text))
-            bounce_text['Content-Description'] = 'Notification'
+            bounce_text = MIMEText(
+                BOUNCE_TEMPLATE.format(smtp_err=smtp_msg_text, **config))
+            bounce_text['Content-Description'] = "Notification"
 
             # create message part with original mail
             original_msg = MIMEMessage(msg)
-            original_msg['Content-Description'] = 'Undelivered Message'
+            original_msg['Content-Description'] = "Undelivered Message"
 
             # create complete bounce message
-            bounce_msg = MIMEMultipart('report; report-type=delivery-status')
+            bounce_msg = MIMEMultipart("report; report-type=delivery-status")
             bounce_msg.attach(bounce_text)
             bounce_msg.attach(original_msg)
-            bounce_msg['From'] = config['envelope_mail_from']
+            bounce_msg['From'] = config['bounce_from']
             bounce_msg['To'] = config['envelope_mail_from']
-            bounce_msg['Subject'] = 'Mail delivery failed: returning message'
+            bounce_msg['Subject'] = "Mail delivery failed: returning message"
             bounce_msg['Date'] = email.utils.formatdate(localtime=True)
-            bounce_msg.preamble = 'This is a MIME-encapsulated message.\n'
+            bounce_msg.preamble = "This is a MIME-encapsulated message."
 
-            smtp_err_2 = smtp_conn.send_message(bounce_msg)
+            smtp_err_2 = smtp_conn.send_message(bounce_msg, "<>")
 
             if smtp_err_2:
                 err("Sending bounce message failed partially: {}".format(smtp_err_2))

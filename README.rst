@@ -27,13 +27,23 @@ Optional. See config option ``require_sasl_username``.
 Configuration Options
 ---------------------
 
-``msg_bounced_requirements``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``bounce_from``
+~~~~~~~~~~~~~~~
+
+*string* or ``null``
+
+``reject_msg_requirements``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *string*
 
 Message contained in bounce email delivered if ``require_``
 configurations are violated.
+
+``hostname``
+~~~~~~~~~~~~
+
+*string*
 
 ``header_add``
 ~~~~~~~~~~~~~~
@@ -47,7 +57,7 @@ with ``header_replace`` and/or ``header_add_if_missing`` are
 present.
 
 ``header_add_if_missing``
-~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *mapping*
 
@@ -135,7 +145,7 @@ Example of a wonderbolt config without a specific use case.
 .. code:: json
 
     {
-        "msg_bounced_requirements": "Bounced due to unprivileged SASL user",
+        "reject_msg_requirements": "Rejected due to unprivileged SASL user",
         "header_add": {
             "X-Header-1": 1,
             "X-Header-3": "Value 3"

@@ -1,4 +1,6 @@
 v1.1.0 (WIP)
+ - Adds missing validation for some config options
+ - Changes name of config option from 'msg_bounced_requirements' to 'reject_msg_requirements'
  - Fixes pylint3 nonconformities as far as possible
 v1.0.0 "Rainbow Crash" (2016-11-29)
  - Adds codename
