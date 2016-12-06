@@ -412,7 +412,7 @@ try:
             bounce_msg.attach(original_msg)
             bounce_msg['From'] = config['bounce_from']
             bounce_msg['To'] = config['envelope_mail_from']
-            bounce_msg['Subject'] = "Mail delivery failed: returning message"
+            bounce_msg['Subject'] = "Mail delivery failed"
             bounce_msg['Date'] = email.utils.formatdate(localtime=True)
             bounce_msg.preamble = "This is a MIME-encapsulated message."
 
