@@ -225,15 +225,15 @@ Complete Mailing List under Postfix
 
     This configuration follows `RFC
     2919 <https://www.ietf.org/rfc/rfc2919.txt>`__ by not removing the
-    ``List-Id`` of a *"parent" mailing list* by not removing any
-    ``List-Id``. Since it is hard to tell what an *unexpected source*
-    for such a header is, it does pass a given ``List-Id`` through to
+    *List-Id* of a *"parent" mailing list* by not removing any
+    *List-Id*. Since it is hard to tell what an *unexpected source*
+    for such a header is, it does pass a given *List-Id* through to
     the list in any case, which violates a *SHOULD NOT* of this RFC.
 
     It further follows `RFC
     2369 <https://www.ietf.org/rfc/rfc2369.txt>`__ by replacing the
-    ``List-Help``, ``List-Owner``, ``List-Subscribe`` and
-    ``List-Unsubscribe`` headers. The ``List-Post`` header could also be
+    *List-Help*, *List-Owner*, *List-Subscribe* and
+    *List-Unsubscribe* headers. The *List-Post* header could also be
     replaced.
 
 *maps/aliases* (postfix ``virtual_alias_maps``)
