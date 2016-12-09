@@ -1,6 +1,8 @@
 v1.1.0 (WIP)
+ - Adds bounce messages if SMTP server partially rejects delivery
  - Adds missing validation for some config options
  - Changes name of config option from 'msg_bounced_requirements' to 'reject_msg_requirements'
+ - Changes ordering of config checks and documentation to alphabetic
  - Fixes pylint3 nonconformities as far as possible
 v1.0.0 "Rainbow Crash" (2016-11-29)
  - Adds codename
