@@ -394,7 +394,7 @@ try:
             smtp_msg_text = "\n\n".join([
                 s['address'] + "\n" +
                 textwrap.indent(prefix=" "*4, text=textwrap.fill(
-                    "{code} {error}".format(**s), 60
+                    "{code} {error}".format(**s), 60-4
                 )) for s in smtp_err_printable
                 ])
             # create message part that explains bounce
