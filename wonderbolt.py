@@ -143,23 +143,31 @@ try:
         # check for unknown config values
 
         known_keys = [
+            'bounce_from',
             'envelope_mail_from',
             'envelope_rcpt_to',
             'header_add',
             'header_add_if_missing',
             'header_replace',
+            'hostname',
+            'reject_msg_requirements',
             'require_from',
             'require_sasl_username',
             'sasl_recipient_delimiter',
             'smtp_server',
-            'bounce_from',
-            'reject_msg_requirements',
-            'hostname'
         ]
 
         for k in config:
             if k not in known_keys:
                 config_err(filename, "unknown parameter '{}'".format(k))
+
+        # validate 'bounce_from'
+
+        if config['bounce_from'] is not None:
+            if not valid_address(config['bounce_from']):
+                config_err(
+                    filename,
+                    "'bounce_from' must be a valid address")
 
         # validate 'envelope_mail_from'
 
@@ -194,6 +202,16 @@ try:
 
         if not isinstance(config['header_replace'], dict):
             config_err(filename, "'header_replace' must be a dict")
+
+        # validate 'hostname'
+
+        if not isinstance(config['hostname'], str):
+            config_err(filename, "'hostname' must be a string")
+
+        # validate 'reject_msg_requirements'
+
+        if not isinstance(config['reject_msg_requirements'], str):
+            config_err(filename, "'reject_msg_requirements' must be a string")
 
         # validate 'require_from'
 
@@ -230,24 +248,6 @@ try:
         if not isinstance(config['sasl_recipient_delimiter'], str):
             config_err(filename, "'sasl_recipient_delimiter' must be a string or `false`")
 
-        # validate 'envelope_mail_from'
-
-        if config['bounce_from'] is not None:
-            if not valid_address(config['bounce_from']):
-                config_err(
-                    filename,
-                    "'bounce_from' must be a valid address")
-
-        # validate 'reject_msg_requirements'
-
-        if not isinstance(config['reject_msg_requirements'], str):
-            config_err(filename, "'reject_msg_requirements' must be a string")
-
-        # validate 'hostname'
-
-        if not isinstance(config['hostname'], str):
-            config_err(filename, "'hostname' must be a string")
-
     def main(LOG: logging.Logger, PROG_NAME: str) -> None:
         argparser = argparse.ArgumentParser(prog=PROG_NAME, description=PROG_NAME)
         argparser.add_argument('--config', nargs='+', required=True)
@@ -256,19 +256,19 @@ try:
         ARGS = argparser.parse_args()
 
         config = collections.OrderedDict([
+            ('bounce_from', None),
             ('envelope_mail_from', None),
             ('envelope_rcpt_to', None),
             ('header_add', {}),
             ('header_add_if_missing', {}),
             ('header_replace', {}),
+            ('hostname', socket.getfqdn()),
+            ('reject_msg_requirements',
+             "You are not fulfilling all requirements for writing to this address."),
             ('require_from', False),
             ('require_sasl_username', False),
             ('sasl_recipient_delimiter', ""),
             ('smtp_server', 'localhost:25'),
-            ('bounce_from', None),
-            ('reject_msg_requirements',
-             "You are not fulfilling all requirements for writing to this address."),
-            ('hostname', socket.getfqdn())
         ])
 
         # load configs
