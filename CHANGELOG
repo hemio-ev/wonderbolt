@@ -1,4 +1,4 @@
-v1.1.0 (WIP)
+v1.1.0 "Rainbow Professionalism Dash" (2016-12-10)
  - Adds bounce messages if SMTP server partially rejects delivery
  - Adds missing validation for some config options
  - Changes name of config option from 'msg_bounced_requirements' to 'reject_msg_requirements'
